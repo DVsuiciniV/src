@@ -11,14 +11,10 @@ public class App {
         String raizTickets = raiz + "Tickets/";
         String raizEstacionamento = raiz + "Estacionamento/";
         criarDiretorios(raiz, raizTickets, raizEstacionamento);
-        Estacionamento estacionamento = new Estacionamento();
         switch (exibirMenu()) {
             case 1:
                 switch (exibirMenuTickets()) {
-                    case 1:
-                        int id = 
-                        System.out.println(id);
-                        
+                    case 1:    
                         break;
                     case 2:
                         break;
@@ -32,11 +28,9 @@ public class App {
             case 2:
                 switch (exibirMenuEstacionamento()) {
                     case 1:
-                        estacionamento = Estacionamento.registrarEstacionamento();
+                        cadastrarEstacionamento(raizEstacionamento);
                         break;
                     case 2:
-                        estacionamento.qtdVagasDisponiveis = estacionamento.qtdVagas - estacionamento.qtdVagasOcupadas;
-                        JOptionPane.showMessageDialog(null, estacionamento.qtdVagasDisponiveis);
                         break;
                     case 3:
                         break;
@@ -145,20 +139,26 @@ public class App {
         pw.append(ticket.saida + "\n");
     }
 
-    public static void cadastrarEstacionamento() throws FileNotFoundException {
+    public static void cadastrarEstacionamento(String raizEstacionamento) throws FileNotFoundException {
         Estacionamento estacionamento = Estacionamento.registrarEstacionamento();
         if (estacionamento != null) {
-            gravarEstacionamento();
+            gravarEstacionamento(estacionamento, raizEstacionamento);
         }
     }
 
     public static void gravarEstacionamento(Estacionamento estacionamento, String raizEstacionamento) throws FileNotFoundException {
-        File dir = new File(raizEstacionamento+estacionamento.num);
-        if(!dir.exists()){dir.mkdir();}
-
         PrintWriter pw = new PrintWriter(raizEstacionamento+estacionamento.num);
         pw.append(estacionamento.num+"\n");
         pw.append(estacionamento.qtdVagas+"\n");
         pw.append(estacionamento.qtdVagasDisponiveis+"\n");
+        pw.append(estacionamento.qtdVagasOcupadas+"");
+        pw.flush();
+        pw.close();
+    }
+
+    public static String[] listaEstacionamento(String raizEstacionamento) {
+        File dir = new File(raizEstacionamento);
+        String[] listaEstacionamento = dir.list();
+        return listaEstacionamento;
     }
 }
