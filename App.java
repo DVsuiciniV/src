@@ -1,47 +1,63 @@
 import javax.swing.JOptionPane;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Random;
+import java.util.ArrayList;
 
 public class App {
     public static void main(String[] args) throws Exception {
         String raiz = "Estabelecimento/";
         String raizTickets = raiz + "Tickets/";
         String raizEstacionamento = raiz + "Estacionamento/";
-        criarDiretorios(raiz, raizTickets, raizEstacionamento);
-        switch (exibirMenu()) {
-            case 1:
-                switch (exibirMenuTickets()) {
-                    case 1:    
-                        break;
-                    case 2:
-                        break;
-                    case 3:
-                        break;
-                    case 4:
-                        main(args);
-                        break;
-                }
-                break;
-            case 2:
-                switch (exibirMenuEstacionamento()) {
-                    case 1:
-                        cadastrarEstacionamento(raizEstacionamento);
-                        break;
-                    case 2:
-                        break;
-                    case 3:
-                        break;
-                    case 4:
-                        main(args);
-                        break;
-                }
-                break;
-            case 3:
-                JOptionPane.showMessageDialog(null, "Encerrando o sistema...");
-        }
+        String qtdEstacionamento = raizEstacionamento + "qtdEstacionamentos.txt";
+        criarDiretorios(raiz, raizTickets, raizEstacionamento, qtdEstacionamento);
+        int op = 0;
+        do {
+            op = exibirMenu();
+            switch (op) {
+                case 1:
+                    int op2 = exibirMenuTickets();
+                    do {
+                        switch (op2) {
+                            case 1:
+                                break;
+                            case 2:
+                                break;
+                            case 3:
+                                break;
+                            case 4:
+                                break;
+                        }
+                    } while (op2 != 4);
+                    break;
+                case 2:
+                    int op3 = exibirMenuEstacionamento();
+                    do {
+                        switch (op3) {
+                            case 1:
+                                cadastrarEstacionamento(raizEstacionamento, qtdEstacionamento);
+                                break;
+                            case 2:
+                                String num = JOptionPane.showInputDialog("Qual estacionamento você quer gerenciar");
+                                op3 = exibirGerenciarEstacionamentos(num, raizEstacionamento);
+                                break;
+                            case 3:
+                                break;
+
+                        }
+                    } while (op3 != 3);
+                    break;
+                case 3:
+                    JOptionPane.showMessageDialog(null, "Encerrando o sistema...");
+                    break;
+            }
+        } while (op != 3);
     }
 
     private static int exibirMenu() {
@@ -69,14 +85,40 @@ public class App {
         int op = Integer.parseInt(JOptionPane.showInputDialog(
                 "      Estacionamento\n" +
                         "1 - Registrar estacionamento\n" +
-                        "2 - Quantidade de vagas disponíveis no estacionamento atual\n" +
+                        "2 - Gerenciar estacionamentos\n" +
                         "3 - Listar carros estacionados no estacionamento atual\n" +
                         "4 - Voltar\n" +
                         "Escolha uma opção:"));
         return op;
     }
 
-    private static void criarDiretorios(String raiz, String raizTickets, String raizEstacionamento) {
+    private static int exibirGerenciarEstacionamentos(String num, String raizEstacionamento) throws NumberFormatException, IOException {
+        Estacionamento e = leEstacionamento(raizEstacionamento, num);
+        int op = Integer.parseInt(JOptionPane.showInputDialog("Estacionamento: " + e.num + "\n\n" +
+                "Quantidade de vagas que o estacionamento possui: " + e.qtdVagas + "\n" +
+                "Quantidade de vagas disponíveis: " + e.qtdVagasDisponiveis + "\n" +
+                "Quantidade de vagas ocupadas: " + e.qtdVagasOcupadas + "\n\n" +
+                "1 - Modificar a quantidade de vagas do estacionamento\n" +
+                "2 - Listar carros que estão nesse estacionamento\n" +
+                "3 - Voltar"));
+        do{
+        switch (op) {
+            case 1:
+                e.qtdVagas = Integer.parseInt(JOptionPane.showInputDialog("Digite a nova quantidade de vagas: "));
+                e.qtdVagasDisponiveis = e.qtdVagas - e.qtdVagasOcupadas;
+                gravarEstacionamento(e, raizEstacionamento);
+                break;
+            case 2:
+                break;
+            case 3:
+                return op;
+        }
+        }while(op!=3);
+        return 2;
+    }
+
+    private static void criarDiretorios(String raiz, String raizTickets, String raizEstacionamento,
+            String qtdEstacionamento) throws IOException {
         File dir = new File(raiz);
         if (!dir.exists()) {
             dir.mkdir();
@@ -88,6 +130,13 @@ public class App {
         dir = new File(raizEstacionamento);
         if (!dir.exists()) {
             dir.mkdir();
+        }
+        dir = new File(qtdEstacionamento);
+        if (!dir.exists()) {
+            dir.createNewFile();
+            try (PrintWriter pw = new PrintWriter(new FileWriter(qtdEstacionamento))) {
+                pw.print("0");
+            }
         }
     }
 
@@ -129,36 +178,44 @@ public class App {
     }
 
     public static void gravarTicket(String raizTickets, Ticket ticket) throws FileNotFoundException {
-        File dir = new File(raizTickets + ticket.id);
-        if(!dir.exists()) {dir.mkdir();}
         PrintWriter pw = new PrintWriter(raizTickets + ticket.id);
         pw.append(ticket.id + "\n");
         pw.append(ticket.idEstacionamento + "\n");
         pw.append(ticket.DataEntrada + "\n");
         pw.append(ticket.carro + "\n");
         pw.append(ticket.saida + "\n");
+        pw.flush();
+        pw.close();
     }
 
-    public static void cadastrarEstacionamento(String raizEstacionamento) throws FileNotFoundException {
-        Estacionamento estacionamento = Estacionamento.registrarEstacionamento();
+    public static void cadastrarEstacionamento(String raizEstacionamento, String qtdEstacionamento)
+            throws NumberFormatException, IOException {
+        Estacionamento estacionamento = Estacionamento.registrarEstacionamento(qtdEstacionamento);
         if (estacionamento != null) {
             gravarEstacionamento(estacionamento, raizEstacionamento);
         }
     }
 
-    public static void gravarEstacionamento(Estacionamento estacionamento, String raizEstacionamento) throws FileNotFoundException {
-        PrintWriter pw = new PrintWriter(raizEstacionamento+estacionamento.num);
-        pw.append(estacionamento.num+"\n");
-        pw.append(estacionamento.qtdVagas+"\n");
-        pw.append(estacionamento.qtdVagasDisponiveis+"\n");
-        pw.append(estacionamento.qtdVagasOcupadas+"");
+    public static void gravarEstacionamento(Estacionamento estacionamento, String raizEstacionamento)
+            throws FileNotFoundException {
+        PrintWriter pw = new PrintWriter(raizEstacionamento + estacionamento.num);
+        pw.append(estacionamento.num + "\n");
+        pw.append(estacionamento.qtdVagas + "\n");
+        pw.append(estacionamento.qtdVagasDisponiveis + "\n");
+        pw.append(estacionamento.qtdVagasOcupadas + "");
         pw.flush();
         pw.close();
     }
 
-    public static String[] listaEstacionamento(String raizEstacionamento) {
-        File dir = new File(raizEstacionamento);
-        String[] listaEstacionamento = dir.list();
-        return listaEstacionamento;
+    public static Estacionamento leEstacionamento(String raizEstacionamento, String num)
+            throws NumberFormatException, IOException {
+        Estacionamento e = new Estacionamento();
+        BufferedReader br = new BufferedReader(new FileReader(raizEstacionamento + num));
+        e.num = Integer.parseInt(br.readLine());
+        e.qtdVagas = Integer.parseInt(br.readLine());
+        e.qtdVagasDisponiveis = Integer.parseInt(br.readLine());
+        e.qtdVagasOcupadas = Integer.parseInt(br.readLine());
+        br.close();
+        return e;
     }
 }
